@@ -56,7 +56,7 @@ class DebianContainer:
         Console.print_exec(f"starting {self._container_name}...")
         self.container.start()
 
-    def _exec_command(self, cmd: str, stdin=False):
+    def _exec_command(self, cmd: str, stdin=False, print_to_console=True):
         exec_result = self.container.exec_run(cmd=cmd, tty=True, stream=True, stdin=stdin)
         if(exec_result[0]):
             Console.print_exec(f"exited with exit_code: {exec_result[0]}")
@@ -77,11 +77,10 @@ class DebianContainer:
         self._exec_command("apt update")
         self._exec_command("apt upgrade --yes")
         self._exec_command("apt-get -y install sudo locales")
-        Console.print_info("finished initializing container.")
 
     def _setup_user(self):
         self._exec_command(f"useradd -m {self._username}")
-        self._exec_command(f"echo \"{self._username} ALL=NOPASSWD:ALL\" > /etc/sudoers.d/{self._username}")
+        self._exec_command(f"echo \"{self._username} ALL=NOPASSWD:ALL\" > /etc/sudoers.d/{self._username}", print_to_console=False)
         # TODO find a way to set password
 
     def __del__(self):

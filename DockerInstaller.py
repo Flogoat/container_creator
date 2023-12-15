@@ -51,7 +51,7 @@ class DockerInstaller:
 
     @staticmethod
     def _install_docker_windows():
-        if not DockerInstaller._is_docker_installed():
+        if DockerInstaller._is_docker_installed():
             Console.print_info("Docker is already installed.")
             return
 
