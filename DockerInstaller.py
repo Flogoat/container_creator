@@ -3,7 +3,7 @@ import platform
 
 import urllib.request
 
-from Console import Console
+from Utils.Console import Console
 
 class DockerInstaller:
     @staticmethod

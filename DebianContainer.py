@@ -6,7 +6,7 @@ from docker.models.containers import Container
 from docker.errors import *
 from docker.types.daemon import CancellableStream
 
-from Console import Console
+from Utils.Console import Console
 
 # creates a container named "debian"
 # configured is a user called admin (passwd: admin)
