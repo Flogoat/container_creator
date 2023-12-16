@@ -9,8 +9,8 @@ from BaseClasses.ContainerBase import ContainerBase
 
 from Utils.Console import Console
 
-# creates a container named "debian"
-# configured is a user called admin (passwd: admin)
+# creates a container
+# configures a user
 # sudoers enabled
 # git installed
 # 
