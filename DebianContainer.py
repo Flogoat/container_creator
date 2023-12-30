@@ -7,8 +7,6 @@ from docker.errors import *
 from docker.types.daemon import CancellableStream
 from BaseClasses.ContainerBase import ContainerBase
 
-from Utils.Console import Console
-
 # creates a container
 # configures a user
 # sudoers enabled

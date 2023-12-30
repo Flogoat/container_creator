@@ -7,17 +7,16 @@ from docker import DockerClient
 from docker.models.containers import Container
 from docker.errors import NotFound
 
-from Utils.Console import Console
 
 class ContainerBase(ABC):
     def __init__(self, image: str, container_name:str, username: str):
+        self.__system: str = platform.system().lower()
+        self.__wait_for_docker_service()
         self.client: DockerClient = docker.from_env()
         self.container: Container = None
-        self.__system: str = platform.system().lower()
         self._image = image
         self._container_name = container_name
         self._username: str = username
-        self.__wait_for_docker_service()
 
     def __wait_for_docker_service(self):
         counter: int = 0
@@ -42,7 +41,8 @@ class ContainerBase(ABC):
 
         except subprocess.CalledProcessError as e:
             # Handle the case where the Docker command fails (e.g., Docker not installed)
-            print(f"Error checking Docker services: {e}")
+            print(f"\nError checking Docker services: {e}")
+            # TODO start docker service???
             return False
 
 
@@ -113,7 +113,8 @@ class ContainerBase(ABC):
         Console.print_info(f"Status: {self.container.status}")
 
     def __del__(self):
-        self.container.stop()
+        if self.container:
+            self.container.stop()
 
     @abstractmethod
     def _init_container(self):
@@ -123,3 +124,28 @@ class ContainerBase(ABC):
     def _setup_user(self):
         raise NotImplementedError("_setup_user() is not yet implemented!")
         
+if __name__ == "__main__":
+    def test():
+        try:
+            system = platform.system().lower()
+            # Use subprocess to run the appropriate Docker command to check if services are running
+            if system is ("linux" or "darwin"):
+                result = subprocess.run(["docker", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            elif system == "windows":
+                result = subprocess.run(["docker.exe", "info"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, shell=True)
+            else:
+                print(f"Unsupported operating system: {system}")
+                return False
+
+            # Check if the output contains information indicating that Docker is running
+            return "Server Version" in result.stdout.decode()
+
+        except subprocess.CalledProcessError as e:
+            # Handle the case where the Docker command fails (e.g., Docker not installed)
+            print(f"Error checking Docker services: {e}")
+
+    counter: int = 0
+    while not test():
+        print(f"[WAIT] waiting for docker_services to start: {counter}", flush=True, end="")
+        time.sleep(1)
+        counter += 1
