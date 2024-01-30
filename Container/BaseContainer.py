@@ -1,24 +1,19 @@
-from datetime import datetime
+
+from abc import ABC, abstractclassmethod
 import time
 import docker
 from docker import DockerClient
 from docker.models.containers import Container
-from docker.errors import *
-from docker.types.daemon import CancellableStream
+from docker.errors import NotFound
 
 from Utils.Console import Console
 
-# creates a container named "debian"
-# configured is a user called admin (passwd: admin)
-# sudoers enabled
-# git installed
-# 
+class BaseContainer:
 
-class DebianContainer:
     def __init__(self, container_name: str, username: str):
         self._container_name:str = container_name
         self._username:str = username
-        self._image:str = "debian:latest"
+        self._image:str = None
         self.container: Container = None
 
     def run_setup(self):
@@ -28,7 +23,6 @@ class DebianContainer:
         
         self.container.reload()
 
-        Console.print_exec(f"updating, upgrading and installing sudo...")
         self._init_container()
 
         self._setup_user()
@@ -36,21 +30,21 @@ class DebianContainer:
         elapsed_time = time.time() - time_start 
         Console.print_finished(f"elapsed time: {time.strftime('%H:%M:%S', time.gmtime(elapsed_time))}s",)
 
-    def _create_container(self):
+    def _create_container(self, tty=True):
         client: DockerClient = docker.from_env()
         try:
             self.container = client.containers.get(self._container_name)
             Console.print_warning(f"\"{self._container_name}\" already exists!")
-            if(self.container.status == "running"):
-                Console.print_warning(f"container already running!")
-            else:
-                Console.print_exec(f"starting already existing container...")
-                self.container.restart()
-        except NotFound:
+        except Exception as ex:
             Console.print_exec("creating container...")
-            self.container: Container = client.containers.create("debian:latest", tty=True)
-            self.container.rename(self._container_name)
-            self.container.start()
+            try:
+                self.container: Container = client.containers.create(self._image, tty)
+                self.container.rename(self._container_name)
+            except Exception as ex:
+                print(ex)
+        
+        if not (self.container.status == "running"):
+            self._start_container
 
     def _start_container(self):
         Console.print_exec(f"starting {self._container_name}...")
@@ -73,16 +67,14 @@ class DebianContainer:
         Console.print_info(f"Name: {container.name}")
         Console.print_info(f"Status: {container.status}")
 
+    @abstractclassmethod
     def _init_container(self):
-        self._exec_command("apt update")
-        self._exec_command("apt upgrade --yes")
-        self._exec_command("apt-get -y install sudo locales")
+        raise NotImplementedError("_init_container() is not implemented!")
 
+    @abstractclassmethod
     def _setup_user(self):
-        self._exec_command(f"useradd -m {self._username}")
-        self._exec_command(f"echo \"{self._username} ALL=NOPASSWD:ALL\" > /etc/sudoers.d/{self._username}", print_to_console=False)
-        # TODO find a way to set password
+        raise NotImplementedError("_setup_user() is not implemented!")
 
     def __del__(self):
-        self.container.stop()
-
+        if self.container:
+            self.container.stop()
